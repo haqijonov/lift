@@ -1,59 +1,68 @@
-let currentFloor = 1;
-let queue = [];
-
+const floorNumber = document.querySelectorAll(".floor-number");
 const elevator = document.querySelector(".elevator");
-const floorButtons = document.querySelectorAll(".button");
-const floorCounters = document.querySelectorAll(".floor-counter");
-const qavatlar = document.querySelectorAll(".qavatlar");
+const floor = document.querySelectorAll(".floor");
+const elevatorIndicator = document.querySelectorAll(".elevator-indicator");
+const buttonUp = document.querySelectorAll(".button-up");
+const buttonDown = document.querySelectorAll(".button-down");
+let currentFloor = 1;
+let targetFloors = [];
+let direction = null;
 
-const floorHeight = 187;
-function moveToFloor(targetFloor) {
-  if (!queue.includes(targetFloor)) {
-    queue.push(targetFloor);
-    queue.sort((a, b) => a - b);
+Array.from(buttonUp)
+  .reverse()
+  .forEach((button, index) => {
+    button.addEventListener("click", () => {
+      addToQueue(index + 1, "up");
+    });
+  });
+
+Array.from(buttonDown)
+  .reverse()
+  .forEach((button, index) => {
+    button.addEventListener("click", () => {
+      addToQueue(index + 1, "down");
+    });
+  });
+
+floorNumber.forEach((button, index) => {
+  button.addEventListener("click", () => {
+    addToQueue(index + 1);
+  });
+});
+
+function addToQueue(floor, dir = null) {
+  if (!targetFloors.includes(floor)) {
+    targetFloors.push(floor);
+    targetFloors.sort((a, b) => (direction === "up" ? a - b : b - a));
+  }
+  if (!direction) {
+    direction = dir || (floor > currentFloor ? "up" : "down");
+    moveElevator();
+  }
+}
+
+function moveElevator() {
+  if (targetFloors.length === 0) {
+    direction = null;
+    return;
   }
 
-  processQueue();
-}
+  const nextFloor = targetFloors.shift();
+  const moveTime = Math.abs(nextFloor - currentFloor) * 500;
 
-function processQueue() {
-  if (queue.length === 0) return;
-
-  const nextFloor = queue[0];
-  const distance = floorHeight * (nextFloor - 1);
-
-  elevator.style.transform = `translateY(-${distance}px)`;
-
-  currentFloor = nextFloor;
-
-  queue.shift();
-
-  updateFloorCounters();
+  elevator.style.transform = `translateY(${-(nextFloor - 1) * 135}px)`;
+  elevatorIndicator.forEach((indicator) => {
+    indicator.textContent = ` ${nextFloor}`;
+  });
 
   setTimeout(() => {
-    if (queue.length > 0) processQueue();
-  }, 1000);
+    currentFloor = nextFloor;
+    moveElevator();
+  }, moveTime);
 }
 
-floorButtons.forEach((button) => {
-  button.addEventListener("click", (event) => {
-    const buttonContainer = event.target.closest(".wrapper-floor");
-    const targetFloor = parseInt(buttonContainer.id);
-    moveToFloor(targetFloor);
-  });
-});
-
-qavatlar.forEach((button, index) => {
-  button.addEventListener("click", () => {
-    const targetFloor = index + 1;
-    moveToFloor(targetFloor);
-  });
-});
-
-function updateFloorCounters() {
-  floorCounters.forEach((counter) => {
-    counter.textContent = ` ${currentFloor}`;
+function updateIndicators() {
+  elevatorIndicator.forEach((indicator) => {
+    indicator.textContent = `Hozirgi qavat: ${currentFloor}`;
   });
 }
-
-updateFloorCounters();
